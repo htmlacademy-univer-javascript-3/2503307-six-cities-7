@@ -1,21 +1,27 @@
 import {memo, useCallback} from 'react';
 import {Link} from 'react-router-dom';
 import type {Offer} from '../../types/offer';
+import {RATING_PERCENTAGE_FACTOR} from '../../constants';
 import FavoriteButton from '../favorite-button/favorite-button';
 
 type PlaceCardProps = {
   offer: Offer;
   cardClassName?: string;
   imageWrapperClassName?: string;
-  onOfferHover?: (offerId: string) => void;
+  onOfferHover?: (offerId: string | null) => void;
 };
 
 const PlaceCard = memo(({offer, cardClassName = 'cities__card', imageWrapperClassName = 'cities__image-wrapper', onOfferHover}: PlaceCardProps) => {
   const {id, image, price, title, type, rating, isPremium = false, isFavorite = false} = offer;
   const handleMouseEnter = useCallback(() => onOfferHover?.(id), [id, onOfferHover]);
+  const handleMouseLeave = useCallback(() => onOfferHover?.(null), [onOfferHover]);
 
   return (
-    <article className={`${cardClassName} place-card`} onMouseEnter={onOfferHover ? handleMouseEnter : undefined}>
+    <article
+      className={`${cardClassName} place-card`}
+      onMouseEnter={onOfferHover ? handleMouseEnter : undefined}
+      onMouseLeave={onOfferHover ? handleMouseLeave : undefined}
+    >
       {isPremium && <div className="place-card__mark"><span>Premium</span></div>}
       <div className={`${imageWrapperClassName} place-card__image-wrapper`}>
         <Link to={`/offer/${id}`}>
@@ -34,7 +40,7 @@ const PlaceCard = memo(({offer, cardClassName = 'cities__card', imageWrapperClas
             iconHeight={19}
           />
         </div>
-        <div className="place-card__rating rating"><div className="place-card__stars rating__stars"><span style={{width: `${Math.round(rating) * 20}%`}} /><span className="visually-hidden">Rating</span></div></div>
+        <div className="place-card__rating rating"><div className="place-card__stars rating__stars"><span style={{width: `${Math.round(rating) * RATING_PERCENTAGE_FACTOR}%`}} /><span className="visually-hidden">Rating</span></div></div>
         <h2 className="place-card__name"><Link to={`/offer/${id}`}>{title}</Link></h2>
         <p className="place-card__type">{type}</p>
       </div>

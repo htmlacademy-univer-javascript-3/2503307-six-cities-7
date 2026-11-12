@@ -12,6 +12,7 @@ import type {Offer} from '../../types/offer';
 import {changeCity} from '../../store/action';
 import type {AppDispatch, RootState} from '../../store';
 import Spinner from '../../components/spinner/spinner';
+import {DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM} from '../../constants';
 import {selectCity, selectIsOffersDataLoading, selectOffersForCity, selectOffersLoadingError, selectRawOffersForCity} from '../../store/selectors';
 
 function getSortedOffers(offers: Offer[], sortType: SortType): Offer[] {
@@ -44,7 +45,7 @@ function MainPage() {
   const mapCenter = useMemo<[number, number]>(
     () => cityLatitude !== undefined && cityLongitude !== undefined
       ? [cityLatitude, cityLongitude]
-      : [48.85661, 2.351499],
+      : DEFAULT_MAP_CENTER,
     [cityLatitude, cityLongitude]
   );
 
@@ -60,49 +61,49 @@ function MainPage() {
     setSearchParams({city});
   }, [dispatch, setSearchParams]);
 
-  const handleOfferHover = useCallback((offerId: string) => {
+  const handleOfferHover = useCallback((offerId: string | null) => {
     setActiveOfferId(offerId);
   }, []);
 
   return (
-    <div className="page page--gray page--main">
-      <main className={`page__main page__main--index${!isOffersDataLoading && !offersLoadingError && cityOffers.length === 0 ? ' page__main--index-empty' : ''}`}>
-        <h1 className="visually-hidden">Cities</h1>
-        <div className="tabs">
-          <section className="locations container">
-            <CityList cities={CITIES} activeCity={activeCity} onCityChange={handleCityChange} />
-          </section>
+    <main className={`page__main page__main--index${!isOffersDataLoading && !offersLoadingError && cityOffers.length === 0 ? ' page__main--index-empty' : ''}`}>
+      <h1 className="visually-hidden">Cities</h1>
+      <div className="tabs">
+        <section className="locations container">
+          <CityList cities={CITIES} activeCity={activeCity} onCityChange={handleCityChange} />
+        </section>
+      </div>
+      <div className="cities">
+        <div className={`cities__places-container${!isOffersDataLoading && !offersLoadingError && cityOffers.length === 0 ? ' cities__places-container--empty' : ''} container`}>
+          {isOffersDataLoading && <section className="cities__places places"><Spinner /></section>}
+          {!isOffersDataLoading && offersLoadingError && <section className="cities__places places"><p role="alert">Could not load offers: {offersLoadingError}</p></section>}
+          {!isOffersDataLoading && !offersLoadingError && cityOffers.length === 0 && (
+            <EmptyOffers city={activeCity} />
+          )}
+          {!isOffersDataLoading && !offersLoadingError && cityOffers.length > 0 && (
+            <section className="cities__places places" data-active-offer={activeOfferId ?? undefined}>
+              <h2 className="visually-hidden">Places</h2>
+              <b className="places__found">
+                {cityOffers.length} {cityOffers.length === 1 ? 'place' : 'places'} to stay in {activeCity}
+              </b>
+              <SortOptions sortType={sortType} onSortChange={setSortType} />
+              <PlaceList offers={sortedOffers} onOfferHover={handleOfferHover} />
+            </section>
+          )}
+          {cityOffers.length > 0 && (
+            <div className="cities__right-section">
+              <CityMap
+                offers={rawCityOffers}
+                activeOfferId={activeOfferId}
+                center={mapCenter}
+                zoom={cityLocation?.zoom ?? DEFAULT_MAP_ZOOM}
+              />
+            </div>
+          )}
+          {cityOffers.length === 0 && <div className="cities__right-section" />}
         </div>
-        <div className="cities">
-          <div className={`cities__places-container${!isOffersDataLoading && !offersLoadingError && cityOffers.length === 0 ? ' cities__places-container--empty' : ''} container`}>
-            {isOffersDataLoading && <section className="cities__places places"><Spinner /></section>}
-            {!isOffersDataLoading && offersLoadingError && <section className="cities__places places"><p role="alert">Could not load offers: {offersLoadingError}</p></section>}
-            {!isOffersDataLoading && !offersLoadingError && cityOffers.length === 0 && (
-              <EmptyOffers city={activeCity} />
-            )}
-            {!isOffersDataLoading && !offersLoadingError && cityOffers.length > 0 && (
-              <section className="cities__places places" data-active-offer={activeOfferId ?? undefined}>
-                <h2 className="visually-hidden">Places</h2>
-                <b className="places__found">{cityOffers.length} places to stay in {activeCity}</b>
-                <SortOptions sortType={sortType} onSortChange={setSortType} />
-                <PlaceList offers={sortedOffers} onOfferHover={handleOfferHover} />
-              </section>
-            )}
-            {cityOffers.length > 0 && (
-              <div className="cities__right-section">
-                <CityMap
-                  offers={rawCityOffers}
-                  activeOfferId={activeOfferId}
-                  center={mapCenter}
-                  zoom={cityLocation?.zoom ?? 13}
-                />
-              </div>
-            )}
-            {cityOffers.length === 0 && <div className="cities__right-section" />}
-          </div>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
 
